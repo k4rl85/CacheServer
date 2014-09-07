@@ -5,6 +5,7 @@ __author__ = 'carlo'
 import unittest
 import server
 import time
+import threading
 
 
 ADDR_TEST = 'localhost'
@@ -267,6 +268,42 @@ class TestCacheServer(unittest.TestCase):
         self.assertIn(test_value, self.cache_server.key_container[test_key])
 
         self.assertEqual(test_value, self.cache_server.get(test_key))
+
+
+class SystemTestCacheServer(unittest.TestCase):
+    def setUp(self):
+        # Start server interface
+        self.cache_server = server.CacheServer(ADDR_TEST, PORT_TEST, mode=server.NORMAL_USE)
+        self.server_thread = threading.Thread(target=self.cache_server.start_server)
+        self.server_thread.start()
+
+        # Start client interface
+        import xmlrpclib
+        self.client_interface = xmlrpclib.ServerProxy('http://' + ADDR_TEST + ':' + str(PORT_TEST))
+
+    def tearDown(self):
+        self.server_thread.join()
+
+    def test_of_get_set_xmlrpc_protocol(self):
+        """
+        This test start a server xlm and try a simple set and get operation
+        """
+        try:
+            # Check that server don't contain the key
+            self.assertIsNone(self.client_interface.get('key1'))
+
+            # Insert the key with the set command
+            test_key = 'key1'
+            test_value = 'Monty Python'
+            self.client_interface.set(test_key, test_value)
+
+            # Check that the server receive the key
+            self.assertEqual(self.client_interface.get(test_key), test_value)
+            self.client_interface.quit()
+        except Exception as e:  # In case of failure this catching ensure the end of server execution
+            self.cache_server.quit()
+            raise e
+
 
 if __name__ == '__main__':
     unittest.main()
