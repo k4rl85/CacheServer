@@ -7,9 +7,13 @@ import server
 import time
 
 
+ADDR_TEST = 'localhost'
+PORT_TEST = 8080
+
+
 class TestCacheServer(unittest.TestCase):
     def setUp(self):
-        self.cache_server = server.CacheServer(mode=server.TEST_MODE)
+        self.cache_server = server.CacheServer(ADDR_TEST, PORT_TEST, mode=server.TEST_MODE)
 
     def test_get_key_with_no_timer(self):
         """
